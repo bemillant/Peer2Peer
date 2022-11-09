@@ -1,0 +1,13 @@
+syntax ="proto3";
+
+package PEER2PEER;
+
+option go_package ="https://github.com/bemillant/Peer2Peer/proto/proto.proto";
+
+message Message{
+    string test = 1;
+}
+
+service testT{
+    rpc testA (Message) returns (Message);
+}
