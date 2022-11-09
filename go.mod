@@ -1,4 +1,4 @@
-module github.com/NaddiNadja/peer-to-peer
+module github.com/bemillant/Peer2Peer
 
 go 1.17
 
