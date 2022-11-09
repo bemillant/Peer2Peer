@@ -24,6 +24,7 @@ type peer struct {
 	wantToEnterCS bool
 	neighbour     ping.PingClient
 	hasToken      bool
+	// clientConnectionStrings map[int32]ping.PingServer
 }
 
 func main() {
@@ -85,40 +86,24 @@ func main() {
 	go p.waitForToken()
 }
 
-// func (p *peer) oldPingToAll() {
-// 	request := &ping.PassToken{SkrrrtNumber: p.s}
-// 	for id, client := range p.clients {
-// 		reply, err := client.ping(p.ctx, request)
-// 		if err != nil {
-// 			fmt.Println("something went wrong")
-// 		}
-// 		fmt.Printf("Got reply from id %v: %v\n", id, reply.Amount)
-// 	}
-// }
+func (p *peer) receiveToken() {
+	p.hasToken = true
+}
 
-// func (p *peer) ping(ctx context.Context, req *ping.PassToken) (*ping.Reply, error) {
-// 	// id := req.Id
-// 	// p.amountOfPings[id] += 1
-
-// 	// rep := &ping.Reply{Amount: p.amountOfPings[id]}
-// 	return rep, nil
-// }
-
-func (p *peer) passToken(ctx context.Context) (*ping.Reply, error) {
+// passToken method should pass the ability to enter the CS and update the skrrrtNumber to its neighbour
+func (p *peer) passToken(ctx context.Context, msg *ping.SkrrrtNumber) (*ping.Reply, error) {
 
 	if p.wantToEnterCS == true {
 		p.skrrrtNumber++
 	}
 
-	// message := &ping.PassToken{
-	// 	SkrrrtNumber: p.skrrrtNumber,
-	// }
+	reply, err := p.neighbour.ping(p.ctx)
+	if err != nil {
+		fmt.Println("something went wrong")
+	}
 
 	p.hasToken = false
 
-	reply := &ping.Reply{
-		Message: "Token has been passed succesfully",
-	}
 	log.Print(reply.GetMessage)
 	return reply, nil
 
@@ -129,7 +114,9 @@ func (p *peer) waitForToken() {
 		// do nothing
 	}
 
-	p.passToken(p.ctx)
+	p.passToken(p.ctx, &ping.SkrrrtNumber{
+		SkrrrtNumber: p.skrrrtNumber,
+	})
 }
 
 func (p *peer) randomUpdateWantToEnterCS() {
@@ -147,3 +134,44 @@ func (p *peer) setNeighbour() {
 		p.neighbour = p.clients[p.id+1]
 	}
 }
+
+func (p *peer) oldPingToAll() {
+	request := &ping.PassToken{SkrrrtNumber: p.s}
+	for id, client := range p.clients {
+		reply, err := client.ping(p.ctx, request)
+		if err != nil {
+			fmt.Println("something went wrong")
+		}
+		fmt.Printf("Got reply from id %v: %v\n", id, reply.Amount)
+	}
+}
+
+func (p *peer) ping(ctx context.Context) (*ping.Reply, error) {
+	rep := &ping.Reply{Message: "send token"}
+	return rep, nil
+}
+
+// func sendMessage(client *Client, serverConnection gRPC.TimeAskServiceClient) {
+// 	scanner := bufio.NewScanner(os.Stdin)
+
+// 	for scanner.Scan() {
+// 		input := scanner.Text()
+
+// 		if input == "exit" {
+// 			client.stream.Send(&gRPC.Message{
+// 				Message:    "exit",
+// 				Clientname: client.name,
+// 			})
+
+// 			client.connection.Close()
+
+// 		} else {
+// 			log.Printf("(Message sent from this client: '%s')", input)
+// 			client.stream.Send(&gRPC.Message{
+// 				Clientname:       client.name,
+// 				Message:          input,
+// 				LamportTimestamp: client.lamportTime,
+// 			})
+// 		}
+// 	}
+// }

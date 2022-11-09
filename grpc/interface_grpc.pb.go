@@ -22,7 +22,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type PingClient interface {
-	PassToken(ctx context.Context, in *PassToken, opts ...grpc.CallOption) (*Reply, error)
+	PassToken(ctx context.Context, in *SkrrrtNumber, opts ...grpc.CallOption) (*Reply, error)
 }
 
 type pingClient struct {
@@ -33,7 +33,7 @@ func NewPingClient(cc grpc.ClientConnInterface) PingClient {
 	return &pingClient{cc}
 }
 
-func (c *pingClient) PassToken(ctx context.Context, in *PassToken, opts ...grpc.CallOption) (*Reply, error) {
+func (c *pingClient) PassToken(ctx context.Context, in *SkrrrtNumber, opts ...grpc.CallOption) (*Reply, error) {
 	out := new(Reply)
 	err := c.cc.Invoke(ctx, "/ping.Ping/passToken", in, out, opts...)
 	if err != nil {
@@ -46,7 +46,7 @@ func (c *pingClient) PassToken(ctx context.Context, in *PassToken, opts ...grpc.
 // All implementations must embed UnimplementedPingServer
 // for forward compatibility
 type PingServer interface {
-	PassToken(context.Context, *PassToken) (*Reply, error)
+	PassToken(context.Context, *SkrrrtNumber) (*Reply, error)
 	mustEmbedUnimplementedPingServer()
 }
 
@@ -54,7 +54,7 @@ type PingServer interface {
 type UnimplementedPingServer struct {
 }
 
-func (UnimplementedPingServer) PassToken(context.Context, *PassToken) (*Reply, error) {
+func (UnimplementedPingServer) PassToken(context.Context, *SkrrrtNumber) (*Reply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PassToken not implemented")
 }
 func (UnimplementedPingServer) mustEmbedUnimplementedPingServer() {}
@@ -71,7 +71,7 @@ func RegisterPingServer(s grpc.ServiceRegistrar, srv PingServer) {
 }
 
 func _Ping_PassToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(PassToken)
+	in := new(SkrrrtNumber)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -83,7 +83,7 @@ func _Ping_PassToken_Handler(srv interface{}, ctx context.Context, dec func(inte
 		FullMethod: "/ping.Ping/passToken",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PingServer).PassToken(ctx, req.(*PassToken))
+		return srv.(PingServer).PassToken(ctx, req.(*SkrrrtNumber))
 	}
 	return interceptor(ctx, in, info, handler)
 }

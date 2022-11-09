@@ -5,13 +5,13 @@ option go_package = "https://github.com/bemillant/Peer2Peer;ping";
 
 
 service Ping {
-    rpc passToken (PassToken)returns (Reply) {}
+    rpc passToken (skrrrtNumber)returns (Reply) {}
 }
 
 message Reply {
     string message = 1;
 }
 
-message PassToken {
+message skrrrtNumber {
     int32 skrrrtNumber = 1;
 }
