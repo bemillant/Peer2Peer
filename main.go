@@ -15,7 +15,7 @@ import (
 
 func main() {
 	arg1, _ := strconv.ParseInt(os.Args[1], 10, 32)
-	ownPort := int32(arg1) + 5000
+	ownPort := int32(arg1) + 5001
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -42,7 +42,7 @@ func main() {
 	}()
 
 	for i := 0; i < 3; i++ {
-		port := int32(5000) + int32(i)
+		port := int32(5001) + int32(i)
 
 		if port == ownPort {
 			continue
