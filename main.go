@@ -1,12 +1,14 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"log"
 	"net"
 	"os"
 	"strconv"
+	"time"
 
 	ping "github.com/NaddiNadja/peer-to-peer/grpc"
 	"google.golang.org/grpc"
@@ -16,7 +18,6 @@ import (
 type peer struct {
 	ping.UnimplementedPingServer
 	id            int32
-	amountOfPings map[int32]int32
 	clients       map[int32]ping.PingClient
 	ctx           context.Context
 	skrrrtNumber  int32
@@ -91,47 +92,19 @@ func main() {
 
 	//scanner := bufio.NewScanner(os.Stdin)
 	for {
-
-		var message string
-		fmt.Scan(&message)
-
-		switch message {
-		case "pass":
-			p.PassTokenToNeighbour()
-			continue
-		case "requestCS":
-			p.requestCriticalSection()
-			continue
-		case "accessCS":
-			p.handleCriticalSection()
-			continue
-		default:
-			continue
-		}
+		p.incTime()
+		p.requestCriticalSection()
 	}
 }
 
-// func incTime(){
-// 	for
-// }
-
-func (p *peer) Ping(ctx context.Context, req *ping.Request) (*ping.Reply, error) {
-	id := req.Id
-	p.amountOfPings[id] += 1
-
-	rep := &ping.Reply{Amount: p.amountOfPings[id]}
-	return rep, nil
-}
-
-func (p *peer) sendPingToAll() {
-	request := &ping.Request{Id: p.id}
-
-	for id, client := range p.clients {
-		reply, err := client.Ping(p.ctx, request)
-		if err != nil {
-			fmt.Println("something went wrong")
+func (p *peer) incTime() {
+	for i := 1; i < 10; i++ {
+		time.Sleep(1 * time.Second)
+		i++
+		fmt.Println(i)
+		if i == 9 {
+			p.PassTokenToNeighbour()
 		}
-		fmt.Printf("Got reply from id %v: %v\n", id, reply.Amount)
 	}
 }
 
@@ -140,6 +113,11 @@ func (p *peer) Token(ctx context.Context, pass *ping.Pass) (*ping.Acknowledgemen
 		Message: "Token has succesfully been passed",
 	}
 	p.hasToken = true
+
+	if p.hasToken && p.wantToEnterCS {
+		fmt.Println("You now have acces to the critical section")
+		p.handleCriticalSection()
+	}
 
 	log.Printf("token has been received from %v", pass.Id)
 	return Ack, nil
@@ -234,8 +212,8 @@ func (p *peer) handleCriticalSection() {
 }
 
 func (p *peer) generateCSMessage() string {
-	var message string
 	fmt.Println("Input text to write to critical section: ")
-	fmt.Scanln(&message)
-	return message
+	in := bufio.NewReader(os.Stdin)
+	input, _ := in.ReadString('\n')
+	return input
 }
