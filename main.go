@@ -93,10 +93,16 @@ func main() {
 
 	//scanner := bufio.NewScanner(os.Stdin)
 	for {
+
+		//First check if the client has the token and wants to enter CS - then enter the CS
+		//(If the client has requested to enter CS whilst not having the token)
 		if p.hasToken && p.wantToEnterCS {
 			p.handleCriticalSection()
 			continue
 		} else {
+			//n is a random integer (that comes at after a random timeinterval)
+			//n is used to emulate a clients decisions - having passing the token being more occuring than requesting to enter and enter CS
+			// !! Maybe the handleCS should just be moved out of the switch? !!
 			n := giveRandInt()
 			switch n % 2 {
 			case 0:
