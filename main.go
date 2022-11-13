@@ -4,9 +4,11 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"math/rand"
 	"net"
 	"os"
 	"strconv"
+	"time"
 
 	ping "github.com/NaddiNadja/peer-to-peer/grpc"
 	"google.golang.org/grpc"
@@ -91,23 +93,53 @@ func main() {
 
 	//scanner := bufio.NewScanner(os.Stdin)
 	for {
-
-		var message string
-		fmt.Scan(&message)
-
-		switch message {
-		case "pass":
-			p.PassTokenToNeighbour()
-			continue
-		case "requestCS":
-			p.requestCriticalSection()
-			continue
-		case "accessCS":
+		if p.hasToken && p.wantToEnterCS {
 			p.handleCriticalSection()
 			continue
-		default:
-			continue
+		} else {
+			n := giveRandInt()
+			switch n % 2 {
+			case 0:
+				switch n % 3 {
+				case 0:
+					p.handleCriticalSection()
+					continue
+				case 1:
+					if p.hasToken && p.wantToEnterCS {
+						p.handleCriticalSection()
+						continue
+					}
+					p.requestCriticalSection()
+					continue
+				default:
+					continue
+				}
+			case 1:
+				if p.hasToken {
+					p.PassTokenToNeighbour()
+				}
+				continue
+			default:
+				continue
+			}
 		}
+
+		// var message string
+		// fmt.Scan(&message)
+
+		// switch message {
+		// case "pass":
+		// 	p.PassTokenToNeighbour()
+		// 	continue
+		// case "requestCS":
+		// 	p.requestCriticalSection()
+		// 	continue
+		// case "accessCS":
+		// 	p.handleCriticalSection()
+		// 	continue
+		// default:
+		// 	continue
+		// }
 	}
 }
 
@@ -123,17 +155,17 @@ func (p *peer) Ping(ctx context.Context, req *ping.Request) (*ping.Reply, error)
 	return rep, nil
 }
 
-func (p *peer) sendPingToAll() {
-	request := &ping.Request{Id: p.id}
+// func (p *peer) sendPingToAll() {
+// 	request := &ping.Request{Id: p.id}
 
-	for id, client := range p.clients {
-		reply, err := client.Ping(p.ctx, request)
-		if err != nil {
-			fmt.Println("something went wrong")
-		}
-		fmt.Printf("Got reply from id %v: %v\n", id, reply.Amount)
-	}
-}
+// 	for id, client := range p.clients {
+// 		reply, err := client.Ping(p.ctx, request)
+// 		if err != nil {
+// 			fmt.Println("something went wrong")
+// 		}
+// 		fmt.Printf("Got reply from id %v: %v\n", id, reply.Amount)
+// 	}
+// }
 
 func (p *peer) Token(ctx context.Context, pass *ping.Pass) (*ping.Acknowledgement, error) {
 	Ack := &ping.Acknowledgement{
@@ -166,12 +198,22 @@ func (p *peer) PassTokenToNeighbour() {
 }
 
 // // method to randomise request for critical sections
-// func (p *peer) randomUpdateWantToEnterCS() {
-// 	rand.Seed(time.Now().UnixNano())
-// 	n := rand.Intn(10) // n will be between 0 and 10
-// 	time.Sleep(time.Duration(n) * time.Second)
-// 	p.requestCriticalSection()
+// func (p *peer) sleepForRandTime() {
+// rand.Seed(time.Now().UnixNano())
+// n := rand.Intn(10) // n will be between 0 and 10
+// time.Sleep(time.Duration(n) * time.Second)
 // }
+
+// Gives a random integer to use in switch statement - as well as putting a sleeper on the app
+// Only used for emulating the app
+func giveRandInt() int32 {
+	rand.Seed(time.Now().UnixNano())
+	i := rand.Intn(10) // random number between 0 and 10
+	time.Sleep(time.Duration(i) * time.Second)
+
+	n := rand.Int31n(5)
+	return n
+}
 
 func (p *peer) setNeighbour() {
 
