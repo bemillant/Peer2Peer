@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"log"
@@ -16,10 +17,8 @@ import (
 type peer struct {
 	ping.UnimplementedPingServer
 	id            int32
-	amountOfPings map[int32]int32
 	clients       map[int32]ping.PingClient
 	ctx           context.Context
-	skrrrtNumber  int32
 	wantToEnterCS bool
 	neighbour     ping.PingClient
 	hasToken      bool
@@ -39,8 +38,9 @@ func main() {
 		neighbour:     nil,
 		wantToEnterCS: false,
 		hasToken:      false,
-		skrrrtNumber:  0,
 	}
+
+	setLog()
 
 	if ownPort == 5001 {
 		p.hasToken = true
@@ -54,6 +54,10 @@ func main() {
 	list, err := net.Listen("tcp", fmt.Sprintf(":%v", ownPort))
 	if err != nil {
 		log.Fatalf("Failed to listen on port: %v", err)
+		fmt.Printf("Failed to listen on port: %v", err)
+	} else {
+		log.Printf("client with ID: %v now listening on port %v", p.id, ownPort)
+		fmt.Printf("you are now listening on port %v", ownPort)
 	}
 
 	grpcServer := grpc.NewServer()
@@ -62,6 +66,7 @@ func main() {
 	go func() {
 		if err := grpcServer.Serve(list); err != nil {
 			log.Fatalf("failed to server %v", err)
+			fmt.Printf("failed to server %v", err)
 		}
 	}()
 
@@ -73,14 +78,17 @@ func main() {
 		}
 
 		var conn *grpc.ClientConn
-		fmt.Printf("Trying to dial: %v\n", port)
+		fmt.Printf("you are trying to dial: %v\n", port)
+		log.Printf("client with ID: %v is trying to dial: %v\n", p.id, port)
 		insecure := insecure.NewCredentials()
 		conn, err := grpc.Dial(fmt.Sprintf(":%v", port), grpc.WithTransportCredentials(insecure), grpc.WithBlock())
 		if err != nil {
-			log.Fatalf("Could not connect: %s", err)
+			log.Fatalf("client with ID: %v could not connect: %s", p.id, err)
+			fmt.Printf("you could not connect: %s", err)
 		}
 
-		log.Printf("--- Succesfully dialed to %v\n", port)
+		log.Printf("client with ID: %v --- Succesfully dialed to %v\n", p.id, port)
+		fmt.Printf("you succesfully dialed to %v\n", port)
 
 		defer conn.Close()
 		c := ping.NewPingClient(conn)
@@ -89,9 +97,7 @@ func main() {
 
 	p.setNeighbour()
 
-	//scanner := bufio.NewScanner(os.Stdin)
 	for {
-
 		var message string
 		fmt.Scan(&message)
 
@@ -108,30 +114,6 @@ func main() {
 		default:
 			continue
 		}
-	}
-}
-
-// func incTime(){
-// 	for
-// }
-
-func (p *peer) Ping(ctx context.Context, req *ping.Request) (*ping.Reply, error) {
-	id := req.Id
-	p.amountOfPings[id] += 1
-
-	rep := &ping.Reply{Amount: p.amountOfPings[id]}
-	return rep, nil
-}
-
-func (p *peer) sendPingToAll() {
-	request := &ping.Request{Id: p.id}
-
-	for id, client := range p.clients {
-		reply, err := client.Ping(p.ctx, request)
-		if err != nil {
-			fmt.Println("something went wrong")
-		}
-		fmt.Printf("Got reply from id %v: %v\n", id, reply.Amount)
 	}
 }
 
@@ -158,20 +140,14 @@ func (p *peer) PassTokenToNeighbour() {
 		}
 
 		p.hasToken = false
-		log.Printf("Token succesfully passed to client at port %v with message: %v", ack.Message, p.getNeighbourID())
+		log.Printf("Token succesfully passed from client %v to client at port %v with message: %v", p.id, p.getNeighbourID(), ack.Message)
+		fmt.Printf("Token succesfully passed to client at port %v with message: %v", p.getNeighbourID(), ack.Message)
 
 	} else {
-		log.Print("does not possess token, so cannot pass")
+		log.Printf("client with ID %v tried to pass token, but failed, since it was not in their possession", p.id)
+		fmt.Print("you do not possess token, so you cannot pass it to your neighbour")
 	}
 }
-
-// // method to randomise request for critical sections
-// func (p *peer) randomUpdateWantToEnterCS() {
-// 	rand.Seed(time.Now().UnixNano())
-// 	n := rand.Intn(10) // n will be between 0 and 10
-// 	time.Sleep(time.Duration(n) * time.Second)
-// 	p.requestCriticalSection()
-// }
 
 func (p *peer) setNeighbour() {
 
@@ -207,18 +183,23 @@ func (p *peer) writeToFile(message string) {
 
 	if _, err := f.WriteString(message + "\n"); err != nil {
 		log.Println(err)
+	} else {
+		log.Printf("succesfully wrote %v to critical section.", message)
+		fmt.Printf("client with ID %v succesfully wrote %v to critical section.", p.id, message)
 	}
 }
 
 func (p *peer) wipeCriticalSection() {
 	if err := os.Truncate("critical_section.log", 0); err != nil {
 		log.Print("Failed to truncate: %v", err)
+		fmt.Print("Failed to truncate: %v", err)
 	}
 }
 
 func (p *peer) requestCriticalSection() {
 	p.wantToEnterCS = true
-	fmt.Printf("peer with Id: %v now request to enter the Critical section \n", p.id)
+	fmt.Printf("requesting to enter the Critical section \n")
+	log.Printf("peer with Id: %v now request to enter the Critical section \n", p.id)
 }
 
 func (p *peer) handleCriticalSection() {
@@ -226,16 +207,36 @@ func (p *peer) handleCriticalSection() {
 	if p.wantToEnterCS && p.hasToken {
 		p.writeToFile(p.generateCSMessage())
 		p.wantToEnterCS = false
+		log.Printf("client with ID %v no longer wants access to critical section", p.id)
+		fmt.Println("you no longer want access to critical section")
 	} else if p.hasToken {
 		fmt.Println("no request made, so cannot access critical section")
+		log.Printf("client with id %v has not made a request for CS, so access cannot be given", p.id)
 	} else {
-		fmt.Println("does not have token, so cannot access critical section")
+		fmt.Println("you do not have the token, so you cannot access critical section")
+		log.Printf("client with ID %v does not have token, so cannot access critical section", p.id)
 	}
 }
 
 func (p *peer) generateCSMessage() string {
-	var message string
 	fmt.Println("Input text to write to critical section: ")
-	fmt.Scanln(&message)
+	in := bufio.NewReader(os.Stdin)
+	message, _ := in.ReadString('\n')
 	return message
+}
+
+// sets the logger to use a log.txt file instead of the console
+func setLog() *os.File {
+	// Clears the log.txt file when a new server is started
+	if err := os.Truncate("log.txt", 0); err != nil {
+		log.Printf("Failed to truncate: %v", err)
+	}
+
+	// This connects to the log file/changes the output of the log informaiton to the log.txt file.
+	f, err := os.OpenFile("log.txt", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil {
+		log.Fatalf("error opening file: %v", err)
+	}
+	log.SetOutput(f)
+	return f
 }
