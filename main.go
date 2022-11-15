@@ -14,6 +14,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
+// These are the necessary attributes that each client must have, collected in a peer struct.
 type peer struct {
 	ping.UnimplementedPingServer
 	id            int32
@@ -24,7 +25,10 @@ type peer struct {
 	hasToken      bool
 }
 
+// Main function.
 func main() {
+	// Assign ports for the clients. In this implementation, there must be 3.
+	// Ports used: 5001, 5002, 5003
 	arg1, _ := strconv.ParseInt(os.Args[1], 10, 32)
 	ownPort := int32(arg1) + 5001
 
@@ -40,8 +44,10 @@ func main() {
 		hasToken:      false,
 	}
 
+	// Set the out for the logs to log.txt. This file is wiped everytime the program is run, but can be analyzed after each.
 	setLog()
 
+	// This hardcodes the first client to be in possession of the token.
 	if ownPort == 5001 {
 		p.hasToken = true
 
@@ -70,6 +76,8 @@ func main() {
 		}
 	}()
 
+	// This is where the clients connect to each other. The grpc.WithBlock() call, forces the clients to await each other
+	// before the program can run properly.
 	for i := 0; i < 3; i++ {
 		port := int32(5001) + int32(i)
 
@@ -95,6 +103,7 @@ func main() {
 		p.clients[port] = c
 	}
 
+	// This assigns the clients neighbour, that it will always pass the token to.
 	p.setNeighbour()
 
 	for {
@@ -127,6 +136,7 @@ func (p *peer) Token(ctx context.Context, pass *ping.Pass) (*ping.Acknowledgemen
 	return Ack, nil
 }
 
+// This function is responsible for passing on the token to the clients neighbour.
 func (p *peer) PassTokenToNeighbour() {
 	if p.hasToken {
 		token := &ping.Pass{
@@ -149,6 +159,7 @@ func (p *peer) PassTokenToNeighbour() {
 	}
 }
 
+// Self-explanatory.
 func (p *peer) setNeighbour() {
 
 	if p.id == 5003 {
@@ -158,6 +169,7 @@ func (p *peer) setNeighbour() {
 	}
 }
 
+// Self-explanatory.
 func (p *peer) getNeighbourID() int32 {
 
 	if p.id == 5003 {
@@ -167,6 +179,7 @@ func (p *peer) getNeighbourID() int32 {
 	}
 }
 
+// This is where the critical section is actually accessed. A string is written to the file critical_section.log
 func (p *peer) writeToFile(message string) {
 
 	f, err := os.OpenFile(
@@ -189,6 +202,7 @@ func (p *peer) writeToFile(message string) {
 	}
 }
 
+// Self-explanatory.
 func (p *peer) wipeCriticalSection() {
 	if err := os.Truncate("critical_section.log", 0); err != nil {
 		log.Print("Failed to truncate: %v", err)
@@ -196,12 +210,14 @@ func (p *peer) wipeCriticalSection() {
 	}
 }
 
+// A client requests acccess to the critical section, simply by changing its boolean.
 func (p *peer) requestCriticalSection() {
 	p.wantToEnterCS = true
 	fmt.Printf("requesting to enter the Critical section \n")
 	log.Printf("peer with Id: %v now request to enter the Critical section \n", p.id)
 }
 
+// Determines whether or not a client will use the oppotunity to access the critical section.
 func (p *peer) handleCriticalSection() {
 
 	if p.wantToEnterCS && p.hasToken {
@@ -218,6 +234,7 @@ func (p *peer) handleCriticalSection() {
 	}
 }
 
+// This allows the user to define what will be written to the critical_section.log file.
 func (p *peer) generateCSMessage() string {
 	fmt.Println("Input text to write to critical section: ")
 	in := bufio.NewReader(os.Stdin)
