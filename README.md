@@ -6,7 +6,7 @@
     We have made a rudimentary implementaion of the automatic passing of the token. We decided to keep the below text since it still explains our approach. The only thing that has changed is the fact that the clients no longer has to manually pass the token. 
 
     OBS 2: 
-    The log.txt file contains the logs from a simulation of a runthrough of the application, that showcase the different state and actions a client can be in and take.  
+    The SimulationLog.txt file contains the logs from a simulation of a runthrough of the application, that showcase the different state and actions a client can be in and take. Also take a look at Simulation_CS to get an overview changes made through the application.
 
     In our implementation we followed the "Token Ring" approach, which ensures one-at-a-time-access to the critical section, by only making it possible to access when a client is in possession of the token.
     This token is passed from peer to peer. Ideally, and to meet the requirement of liveliness, the passing of the token should happen automatically. This might be accomplished by implementing some sort of timer, that forces the client to pass the token, has it not already done so, within a short timeframe.

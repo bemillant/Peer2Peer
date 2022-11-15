@@ -106,6 +106,8 @@ func main() {
 	}
 
 	// This assigns the clients neighbour, that it will always pass the token to.
+	// We do not handle disconnected clients - however it could be implemented with a check, whether a passing of a token succeed within a predetermined time
+	// If the token could not be passed to a clients neighbor, the clients just establishes new neighbors.
 	p.setNeighbour()
 
 	for {
@@ -149,6 +151,7 @@ func main() {
 			}
 		}
 
+		//Implementaion of manual passing and request of token.
 		// var message string
 		// fmt.Scan(&message)
 
@@ -255,7 +258,7 @@ func (p *peer) writeToFile(message string) {
 	}
 }
 
-// Self-explanatory.
+// Self-explanatory. Used for setting up a fresh critical_section.log
 func (p *peer) wipeCriticalSection() {
 	if err := os.Truncate("critical_section.log", 0); err != nil {
 		log.Print("Failed to truncate: %v", err)
