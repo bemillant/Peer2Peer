@@ -121,7 +121,10 @@ func main() {
 					continue
 				}
 			case 1:
-				if p.hasToken {
+				if p.hasToken && p.wantToEnterCS {
+					p.handleCriticalSection()
+					continue
+				} else if p.hasToken {
 					p.PassTokenToNeighbour()
 				}
 				continue
