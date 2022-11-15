@@ -1,0 +1,14 @@
+2022/11/14 16:42:44 client with ID: 5003 now listening on port 5003
+2022/11/14 16:42:44 client with ID: 5003 is trying to dial: 5001
+2022/11/14 16:42:44 client with ID: 5003 --- Succesfully dialed to 5001
+2022/11/14 16:42:44 client with ID: 5003 is trying to dial: 5002
+2022/11/14 16:42:44 client with ID: 5003 --- Succesfully dialed to 5002
+2022/11/14 16:42:45 client with ID: 5001 --- Succesfully dialed to 5003
+2022/11/14 16:42:45 client with ID: 5002 --- Succesfully dialed to 5003
+2022/11/14 16:42:47 peer with Id: 5001 now request to enter the Critical section 
+2022/11/14 16:42:58 succesfully wrote e
+ to critical section.
+2022/11/14 16:42:58 client with ID 5001 no longer wants access to critical section
+2022/11/14 16:43:26 token has been received from 5001
+2022/11/14 16:43:26 Token succesfully passed from client 5001 to client at port 5002 with message: Token has succesfully been passed
+2022/11/14 16:43:38 client with ID 5003 tried to pass token, but failed, since it was not in their possession
