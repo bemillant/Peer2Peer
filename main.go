@@ -16,18 +16,32 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-// These are the necessary attributes that each client must have, collected in a peer struct.
+// Everything is a server and client, which is why we only have the main.go file.
+
+// These are the necessary attributes that each peer must have, collected in a peer struct.
 type peer struct {
+	// Good style to have the UnimplementedPingServer, since it adheres to interface "rules"
 	ping.UnimplementedPingServer
 	id            int32
-	clients       map[int32]ping.PingClient
-	ctx           context.Context
-	wantToEnterCS bool
-	neighbour     ping.PingClient
+	clients       map[int32]ping.PingClient // should maybe have been named peers since no clients "exists""
+	ctx           context.Context           // this is instead of calling context.Background()
+	wantToEnterCS bool                      // CS = critical section
+	neighbour     ping.PingClient           // The one the peer passes the token ring to
 	hasToken      bool
 }
 
 // Main function.
+/*
+	- Assigns ports for clients (peers).
+	- Sets logs.out
+	- Sets up listener on ownPort
+	- Registers server
+	- Starts serving with a gorouting
+	- Connects clients (peers) with each other, and sets neighbour for each
+	- Defines business logic for the token ring (see for-loop comment)
+
+
+*/
 func main() {
 	// Assign ports for the clients. In this implementation, there must be 3.
 	// Ports used: 5001, 5002, 5003
@@ -71,6 +85,7 @@ func main() {
 	grpcServer := grpc.NewServer()
 	ping.RegisterPingServer(grpcServer, p)
 
+	// This keeps running even though the program continues
 	go func() {
 		if err := grpcServer.Serve(list); err != nil {
 			log.Fatalf("failed to server %v", err)
@@ -110,6 +125,7 @@ func main() {
 	// If the token could not be passed to a clients neighbor, the clients just establishes new neighbors.
 	p.setNeighbour()
 
+	// Token ring implementation:
 	for {
 
 		//First check if the client has the token and wants to enter CS - then enter the CS
@@ -171,6 +187,7 @@ func main() {
 	}
 }
 
+// Implementation of the only RPC method from the proto-file:
 func (p *peer) Token(ctx context.Context, pass *ping.Pass) (*ping.Acknowledgement, error) {
 	Ack := &ping.Acknowledgement{
 		Message: "Token has succesfully been passed",
